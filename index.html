@@ -106,6 +106,29 @@
     }
     #webchat .markdown code { font-family: var(--mono); }
 
+    /* 코드 이력 */
+    #codeDlg { width: min(960px, calc(100vw - 24px)); }
+    dialog textarea.code-in { font-family: var(--mono); font-size: 13px; min-height: 120px; }
+    .code-pre {
+      margin: 0; background: #0a1120; border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px;
+      overflow: auto; max-height: 320px; font-family: var(--mono); font-size: 13px; line-height: 1.55; white-space: pre; color: #dbe7ff;
+    }
+    .cand, .ver { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
+    details > summary { cursor: pointer; color: var(--muted); font-size: 13px; }
+    details[open] > summary { margin-bottom: 6px; }
+    .cand-act { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    dialog .cand-act input { flex: 1 1 200px; width: auto; }
+    .cmp-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; }
+    .cmp-row label { flex: 1 1 160px; }
+    .diff { border: 1px solid var(--line); border-radius: 8px; overflow: auto; max-height: 420px; font-family: var(--mono); font-size: 13px; line-height: 1.55; background: #0a1120; }
+    .diff div { display: flex; white-space: pre; padding: 0 10px; min-height: 1.55em; }
+    .diff .m { width: 1.6em; flex: none; color: var(--muted); user-select: none; }
+    .diff .add { background: rgba(52,211,153,.14); }
+    .diff .add .m { color: var(--ok); }
+    .diff .del { background: rgba(248,113,113,.14); }
+    .diff .del .m { color: var(--err); }
+    .diff .skip { color: var(--muted); background: rgba(255,255,255,.04); }
+
     /* 작업 진행 단계 */
     .stagebar { display: flex; flex-direction: column; gap: 8px; }
     .stages { list-style: none; margin: 0; padding: 0 0 2px; display: flex; gap: 6px; overflow-x: auto; }
@@ -215,6 +238,10 @@
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
           <b>프로젝트 관리</b>
         </a>
+        <a href="#" id="navCode">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5"/></svg>
+          <b>코드 이력</b>
+        </a>
       </nav>
       <div class="rail-foot">
         <div class="lamp"><i></i><span class="lamp-text">연결 중</span></div>
@@ -230,6 +257,7 @@
         </div>
         <div class="head-actions">
           <button type="button" class="btn" id="projChip">프로젝트 선택</button>
+          <button type="button" class="btn" id="codeBtn" hidden>코드 이력</button>
           <div class="lamp" aria-hidden="true"><i></i><span class="lamp-text">연결 중</span></div>
         </div>
       </header>
@@ -294,6 +322,49 @@
     </div>
   </dialog>
 
+  <dialog id="codeDlg" aria-labelledby="codeTitle">
+    <div class="dlg-head">
+      <h2 id="codeTitle">코드 이력</h2>
+      <button type="button" class="btn" id="codeClose">닫기</button>
+    </div>
+    <div class="dlg-body">
+      <p class="note">이 화면의 비교와 이력은 텍스트 기준이며, GX Works의 컴파일이나 PLC 동작 검증이 아닙니다. 복원은 이력에 새 버전을 만드는 것이고, GX Works에는 코드를 복사해서 직접 붙여넣어야 합니다.</p>
+      <p class="note" id="codeMsg" role="status"></p>
+
+      <section class="card">
+        <h3>코드 후보</h3>
+        <p class="note">AGENT 01 응답에서 찾은 코드입니다. 저장한 코드만 이력에 반영되고, 필요 없는 코드는 무시할 수 있습니다.</p>
+        <div id="candList" class="plist"></div>
+        <p class="note" id="candEmpty">새로 찾은 코드가 없습니다. 응답에 코드 블록이 없으면 아래에서 직접 추가하세요.</p>
+      </section>
+
+      <section class="card">
+        <h3>직접 버전 추가</h3>
+        <label>코드<textarea id="manCode" class="code-in" spellcheck="false"></textarea></label>
+        <label>변경 메모 (선택)<input id="manNote" maxlength="200"></label>
+        <div class="actions"><button type="button" class="btn primary" id="manSave">버전으로 저장</button></div>
+      </section>
+
+      <section class="card">
+        <h3>저장된 버전</h3>
+        <div id="verList" class="plist"></div>
+        <p class="note" id="verEmpty">저장된 버전이 없습니다.</p>
+      </section>
+
+      <section class="card">
+        <h3>버전 비교</h3>
+        <div class="cmp-row">
+          <label>이전 버전<select id="cmpA"></select></label>
+          <label>새 버전<select id="cmpB"></select></label>
+          <button type="button" class="btn primary" id="cmpGo">비교</button>
+        </div>
+        <label style="flex-direction:row;align-items:center;gap:6px"><input type="checkbox" id="diffOnly" checked style="width:auto"> 변경된 부분만 보기</label>
+        <p class="note" id="diffSum"></p>
+        <div class="diff" id="diffBox" hidden></div>
+      </section>
+    </div>
+  </dialog>
+
   <script>
     // 프로젝트 저장 모듈: 채팅 연결 코드와 분리되어 있으며, 응답을 읽어서 저장만 한다.
     (function () {
@@ -309,6 +380,7 @@
         if (!p.stages || typeof p.stages !== "object") p.stages = {};
         STAGES.forEach(function (s) { if (STATUS.indexOf(p.stages[s[0]]) < 0) p.stages[s[0]] = "대기"; });
         if (!validStage(p.currentStage)) p.currentStage = null;
+        if (!Array.isArray(p.dismissed)) p.dismissed = [];
         return p;
       }
       var $ = function (id) { return document.getElementById(id); };
@@ -330,11 +402,12 @@
       function openDb() {
         return new Promise(function (res, rej) {
           if (!window.indexedDB) { rej(new Error("indexedDB 없음")); return; }
-          var r = indexedDB.open(DB_NAME, 1);
+          var r = indexedDB.open(DB_NAME, 2);
           r.onupgradeneeded = function () {
             var d = r.result;
-            d.createObjectStore("projects", { keyPath: "id" });
-            d.createObjectStore("messages", { keyPath: "key" }).createIndex("projectId", "projectId");
+            if (!d.objectStoreNames.contains("projects")) d.createObjectStore("projects", { keyPath: "id" });
+            if (!d.objectStoreNames.contains("messages")) d.createObjectStore("messages", { keyPath: "key" }).createIndex("projectId", "projectId");
+            if (!d.objectStoreNames.contains("versions")) d.createObjectStore("versions", { keyPath: "id" }).createIndex("projectId", "projectId");
           };
           r.onsuccess = function () { res(r.result); };
           r.onerror = function () { rej(r.error); };
@@ -370,10 +443,12 @@
       }
       function putProject(p) { var t = tx("projects", "readwrite"); t.objectStore("projects").put(p); return txDone(t); }
       function delProject(id) {
-        var t = tx(["projects", "messages"], "readwrite");
+        var t = tx(["projects", "messages", "versions"], "readwrite");
         t.objectStore("projects").delete(id);
         var c = t.objectStore("messages").index("projectId").openCursor(IDBKeyRange.only(id));
         c.onsuccess = function () { var cur = c.result; if (cur) { cur.delete(); cur.continue(); } };
+        var c2 = t.objectStore("versions").index("projectId").openCursor(IDBKeyRange.only(id));
+        c2.onsuccess = function () { var cu = c2.result; if (cu) { cu.delete(); cu.continue(); } };
         return txDone(t);
       }
       function addMsg(m) {
@@ -389,6 +464,7 @@
         if (!p) activeId = null;
         $("projChip").textContent = p ? "프로젝트: " + p.name : "프로젝트 선택";
         $("saveNote").hidden = !!p || !db;
+        $("codeBtn").hidden = !p;
         renderStages();
       }
 
@@ -483,13 +559,17 @@
 
       function exportProjects(ids) {
         var list = projects.filter(function (p) { return !ids || ids.indexOf(p.id) >= 0; });
-        Promise.all(list.map(function (p) { return getMsgs(p.id); })).then(function (all) {
+        Promise.all([Promise.all(list.map(function (p) { return getMsgs(p.id); })), Promise.all(list.map(function (p) { return getVersions(p.id); }))]).then(function (r) {
+          var all = r[0], vers = r[1];
           var data = {
             app: "PanelLab", version: 1, exportedAt: new Date().toISOString(),
             projects: list.map(function (p, i) {
               return {
                 name: p.name, vendor: p.vendor, gx: p.gx, cpu: p.cpu, memo: p.memo || "",
-                stages: p.stages, currentStage: p.currentStage,
+                stages: p.stages, currentStage: p.currentStage, dismissed: p.dismissed,
+                versions: vers[i].map(function (v) {
+                  return { n: v.n, code: v.code, source: v.source, stage: v.stage || null, note: v.note || "", reason: v.reason || "", createdAt: v.createdAt };
+                }),
                 createdAt: p.createdAt, updatedAt: p.updatedAt,
                 messages: all[i].map(function (m) { return { role: m.role, text: m.text, ts: m.ts, stage: m.stage || null }; })
               };
@@ -515,7 +595,7 @@
         f.text().then(function (text) {
           var d = JSON.parse(text);
           if (!d || d.app !== "PanelLab" || !Array.isArray(d.projects)) throw new Error("형식");
-          var t = tx(["projects", "messages"], "readwrite");
+          var t = tx(["projects", "messages", "versions"], "readwrite");
           d.projects.forEach(function (src) {
             var id = uid();
             var ns = norm({ stages: (src.stages && typeof src.stages === "object") ? src.stages : {}, currentStage: src.currentStage });
@@ -523,11 +603,21 @@
               id: id, vendor: "Mitsubishi", name: str(src.name, 80, "가져온 프로젝트"),
               gx: GX.indexOf(src.gx) >= 0 ? src.gx : "미정", cpu: str(src.cpu, 60, "미정"),
               memo: str(src.memo, 500, ""), createdAt: num(src.createdAt), updatedAt: num(src.updatedAt),
-              stages: ns.stages, currentStage: ns.currentStage
+              stages: ns.stages, currentStage: ns.currentStage,
+              dismissed: Array.isArray(src.dismissed) ? src.dismissed.filter(function (x) { return typeof x === "string"; }).slice(0, 500) : []
             });
             (Array.isArray(src.messages) ? src.messages : []).forEach(function (m, i) {
               if (!m || (m.role !== "user" && m.role !== "agent") || typeof m.text !== "string") return;
               t.objectStore("messages").put({ key: id + ":" + i, projectId: id, role: m.role, text: m.text, ts: num(m.ts), stage: validStage(m.stage) ? m.stage : null });
+            });
+            (Array.isArray(src.versions) ? src.versions : []).forEach(function (v, i) {
+              if (!v || typeof v.code !== "string" || !v.code.trim() || v.code.length > 300000) return;
+              t.objectStore("versions").put({
+                id: id + ":v" + i, projectId: id, n: typeof v.n === "number" && isFinite(v.n) ? v.n : i + 1,
+                code: v.code, source: ["agent", "user", "restore"].indexOf(v.source) >= 0 ? v.source : "user",
+                stage: validStage(v.stage) ? v.stage : null, note: str(v.note, 200, ""),
+                reason: typeof v.reason === "string" ? v.reason.slice(0, 20000) : "", createdAt: num(v.createdAt)
+              });
             });
           });
           return txDone(t).then(function () { $("ioMsg").textContent = d.projects.length + "개 프로젝트를 불러왔습니다."; return refresh(); });
@@ -592,6 +682,248 @@
       $("navProjects").onclick = openDlg;
       $("dlgClose").onclick = function () { dlg.close ? dlg.close() : dlg.removeAttribute("open"); };
 
+      // ---------- 코드 이력 ----------
+      var curVers = [], lastOps = null;
+      function hash(str) { var h = 5381; for (var i = 0; i < str.length; i++) h = ((h << 5) + h + str.charCodeAt(i)) | 0; return (h >>> 0).toString(36) + ":" + str.length; }
+      function getVersions(id) {
+        return req(tx("versions", "readonly").objectStore("versions").index("projectId").getAll(id)).then(function (l) {
+          return l.sort(function (a, b) { return a.n - b.n; });
+        });
+      }
+      function addVersion(v) {
+        var t = tx(["versions", "projects"], "readwrite");
+        t.objectStore("versions").put(v);
+        var ps = t.objectStore("projects"), g = ps.get(v.projectId);
+        g.onsuccess = function () { if (g.result) { g.result.updatedAt = Date.now(); ps.put(g.result); } };
+        return txDone(t);
+      }
+      function extractCandidates(msgs) {
+        var out = [], seen = {};
+        msgs.slice().reverse().forEach(function (m) {
+          if (m.role !== "agent") return;
+          var re = /```([^\n`]*)\n([\s\S]*?)```/g, mt;
+          while ((mt = re.exec(m.text))) {
+            var code = mt[2].replace(/\s+$/, "");
+            if (!code.trim()) continue;
+            var h = hash(code);
+            if (seen[h]) continue;
+            seen[h] = 1;
+            out.push({ code: code, lang: mt[1].trim(), ts: m.ts, stage: m.stage || null, text: m.text, hash: h });
+          }
+        });
+        return out;
+      }
+      function diffLines(aText, bText) {
+        var a = aText.replace(/\r\n?/g, "\n").split("\n"), b = bText.replace(/\r\n?/g, "\n").split("\n");
+        var s0 = 0;
+        while (s0 < a.length && s0 < b.length && a[s0] === b[s0]) s0++;
+        var ea = a.length, eb = b.length;
+        while (ea > s0 && eb > s0 && a[ea - 1] === b[eb - 1]) { ea--; eb--; }
+        var A = a.slice(s0, ea), B = b.slice(s0, eb), n = A.length, m = B.length;
+        if (n > 1500 || m > 1500) return null;
+        var w = m + 1, dp = new Uint16Array((n + 1) * w), i, j, k;
+        for (i = n - 1; i >= 0; i--) for (j = m - 1; j >= 0; j--)
+          dp[i * w + j] = A[i] === B[j] ? dp[(i + 1) * w + j + 1] + 1 : Math.max(dp[(i + 1) * w + j], dp[i * w + j + 1]);
+        var ops = [];
+        for (k = 0; k < s0; k++) ops.push(["eq", a[k]]);
+        i = 0; j = 0;
+        while (i < n && j < m) {
+          if (A[i] === B[j]) { ops.push(["eq", A[i]]); i++; j++; }
+          else if (dp[(i + 1) * w + j] >= dp[i * w + j + 1]) { ops.push(["del", A[i]]); i++; }
+          else { ops.push(["add", B[j]]); j++; }
+        }
+        while (i < n) { ops.push(["del", A[i]]); i++; }
+        while (j < m) { ops.push(["add", B[j]]); j++; }
+        for (k = ea; k < a.length; k++) ops.push(["eq", a[k]]);
+        return ops;
+      }
+      function copyText(str) {
+        function fallback() {
+          var ta = document.createElement("textarea");
+          ta.value = str; ta.style.position = "fixed"; ta.style.opacity = "0";
+          document.body.appendChild(ta); ta.select();
+          try { document.execCommand("copy"); } catch (e) {}
+          ta.remove();
+          return Promise.resolve();
+        }
+        if (navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(str).catch(fallback);
+        return fallback();
+      }
+      function codeDetails(code) {
+        var d = document.createElement("details");
+        d.appendChild(mk("summary", "", "코드 보기 (" + code.split("\n").length + "줄)"));
+        d.appendChild(mk("pre", "code-pre", code));
+        return d;
+      }
+      function reasonDetails(text) {
+        var d = document.createElement("details");
+        d.appendChild(mk("summary", "", "AI 응답 원문 (변경 이유 확인)"));
+        d.appendChild(mk("div", "msg agent", text));
+        return d;
+      }
+      var SRC = { agent: "AI 응답", user: "직접 입력", restore: "복원" };
+
+      function saveVersion(o) {
+        var p = cur();
+        if (!p) return Promise.resolve();
+        return getVersions(p.id).then(function (vers) {
+          var n = vers.length ? vers[vers.length - 1].n + 1 : 1;
+          return addVersion({
+            id: uid(), projectId: p.id, n: n, code: o.code, source: o.source, stage: o.stage || null,
+            note: (o.note || "").trim().slice(0, 200), reason: (o.reason || "").slice(0, 20000), createdAt: Date.now()
+          }).then(function () { return n; });
+        }).then(function (n) {
+          $("codeMsg").textContent = "v" + n + "으로 저장했습니다.";
+          return refresh();
+        }).then(renderCode).catch(function () { $("codeMsg").textContent = "저장하지 못했습니다."; });
+      }
+
+      function renderCandidates(list) {
+        var box = $("candList");
+        box.textContent = "";
+        $("candEmpty").hidden = list.length > 0;
+        list.forEach(function (c) {
+          var el = mk("div", "cand");
+          el.appendChild(mk("span", "note", fmt(c.ts) + (c.stage ? " · " + stageName(c.stage) : "") + (c.lang ? " · " + c.lang : "") + " · " + c.code.split("\n").length + "줄"));
+          el.appendChild(codeDetails(c.code));
+          if (c.text) el.appendChild(reasonDetails(c.text));
+          var act = mk("div", "cand-act"), memo = document.createElement("input");
+          memo.placeholder = "변경 메모 (선택)"; memo.maxLength = 200; memo.setAttribute("aria-label", "변경 메모");
+          var sv = mk("button", "btn primary", "버전으로 저장"); sv.type = "button";
+          sv.onclick = function () { saveVersion({ code: c.code, source: "agent", stage: c.stage, note: memo.value, reason: c.text }); };
+          var ig = mk("button", "btn", "무시"); ig.type = "button";
+          ig.onclick = function () {
+            var p = cur();
+            if (!p) return;
+            updateProject(p.id, function (q) { if (q.dismissed.indexOf(c.hash) < 0) q.dismissed.push(c.hash); }).then(refresh).then(renderCode);
+          };
+          act.appendChild(memo); act.appendChild(sv); act.appendChild(ig);
+          el.appendChild(act);
+          box.appendChild(el);
+        });
+      }
+
+      function fillSelect(sel, vers, preferred) {
+        var prev = sel.value;
+        sel.textContent = "";
+        vers.forEach(function (v) {
+          var o = document.createElement("option");
+          o.value = String(v.n); o.textContent = "v" + v.n + " · " + fmt(v.createdAt);
+          sel.appendChild(o);
+        });
+        var want = prev && vers.some(function (v) { return String(v.n) === prev; }) ? prev : preferred;
+        if (want !== undefined) sel.value = want;
+      }
+
+      function renderVersions(p, vers) {
+        curVers = vers;
+        var box = $("verList");
+        box.textContent = "";
+        $("verEmpty").hidden = vers.length > 0;
+        vers.slice().reverse().forEach(function (v) {
+          var el = mk("div", "ver");
+          el.appendChild(mk("b", "", "v" + v.n));
+          el.appendChild(mk("span", "note", SRC[v.source] + (v.stage ? " · " + stageName(v.stage) : "") + " · " + fmt(v.createdAt)));
+          if (v.note) el.appendChild(mk("span", "", "메모: " + v.note));
+          el.appendChild(codeDetails(v.code));
+          if (v.reason) el.appendChild(reasonDetails(v.reason));
+          var act = mk("div", "cand-act");
+          var cp = mk("button", "btn", "코드 복사"); cp.type = "button";
+          cp.onclick = function () { copyText(v.code).then(function () { $("codeMsg").textContent = "v" + v.n + " 코드를 복사했습니다."; }); };
+          var rs = mk("button", "btn", "이 버전으로 복원"); rs.type = "button";
+          rs.onclick = function () {
+            saveVersion({ code: v.code, source: "restore", stage: p.currentStage, note: "v" + v.n + "에서 복원", reason: "" });
+          };
+          act.appendChild(cp); act.appendChild(rs);
+          el.appendChild(act);
+          box.appendChild(el);
+        });
+        var last = vers.length ? String(vers[vers.length - 1].n) : undefined;
+        var prevV = vers.length > 1 ? String(vers[vers.length - 2].n) : last;
+        fillSelect($("cmpA"), vers, prevV);
+        fillSelect($("cmpB"), vers, last);
+      }
+
+      function renderCode() {
+        var p = cur();
+        if (!p) return Promise.resolve();
+        $("codeTitle").textContent = "코드 이력: " + p.name;
+        return Promise.all([getMsgs(p.id), getVersions(p.id)]).then(function (r) {
+          var saved = {}, dis = {};
+          r[1].forEach(function (v) { saved[hash(v.code)] = 1; });
+          p.dismissed.forEach(function (h) { dis[h] = 1; });
+          renderCandidates(extractCandidates(r[0]).filter(function (c) { return !saved[c.hash] && !dis[c.hash]; }));
+          renderVersions(p, r[1]);
+        });
+      }
+
+      function drawDiff() {
+        var box = $("diffBox");
+        box.textContent = "";
+        if (!lastOps) { box.hidden = true; return; }
+        var ops = lastOps, only = $("diffOnly").checked, keep = [], i, k;
+        for (i = 0; i < ops.length; i++) keep.push(!only);
+        if (only) {
+          for (i = 0; i < ops.length; i++) if (ops[i][0] !== "eq") for (k = Math.max(0, i - 2); k <= Math.min(ops.length - 1, i + 2); k++) keep[k] = true;
+        }
+        var skipped = 0;
+        function flush() { if (skipped) { var d = mk("div", "skip"); d.appendChild(mk("span", "m", "")); d.appendChild(mk("span", "", "… 동일한 " + skipped + "줄 생략")); box.appendChild(d); skipped = 0; } }
+        ops.forEach(function (op, idx) {
+          if (!keep[idx]) { skipped++; return; }
+          flush();
+          var d = mk("div", op[0]);
+          d.appendChild(mk("span", "m", op[0] === "add" ? "+" : op[0] === "del" ? "−" : ""));
+          d.appendChild(mk("span", "", op[1]));
+          box.appendChild(d);
+        });
+        flush();
+        box.hidden = false;
+      }
+
+      function runDiff() {
+        var a = curVers.filter(function (v) { return String(v.n) === $("cmpA").value; })[0];
+        var b = curVers.filter(function (v) { return String(v.n) === $("cmpB").value; })[0];
+        lastOps = null;
+        if (!a || !b) { $("diffSum").textContent = "비교할 버전이 없습니다. 버전을 먼저 저장하세요."; drawDiff(); return; }
+        if (a.n === b.n) { $("diffSum").textContent = "서로 다른 두 버전을 선택해 주세요."; drawDiff(); return; }
+        var ops = diffLines(a.code, b.code);
+        if (!ops) { $("diffSum").textContent = "변경된 부분이 1,500줄을 넘어 비교를 제한합니다. 더 작은 단위로 나눠 저장해 주세요."; drawDiff(); return; }
+        var add = ops.filter(function (o) { return o[0] === "add"; }).length, del = ops.filter(function (o) { return o[0] === "del"; }).length;
+        $("diffSum").textContent = "v" + a.n + " → v" + b.n + " : 추가 " + add + "줄, 삭제 " + del + "줄" + (add + del === 0 ? " (내용이 같습니다)" : "");
+        lastOps = add + del === 0 ? null : ops;
+        drawDiff();
+      }
+      $("cmpGo").onclick = runDiff;
+      $("diffOnly").onchange = drawDiff;
+
+      $("manSave").onclick = function () {
+        var code = $("manCode").value.replace(/\s+$/, "");
+        if (!code.trim()) { $("codeMsg").textContent = "저장할 코드를 입력해 주세요."; return; }
+        if (code.length > 300000) { $("codeMsg").textContent = "코드가 너무 깁니다 (30만 자 이하)."; return; }
+        var p = cur();
+        saveVersion({ code: code, source: "user", stage: p ? p.currentStage : null, note: $("manNote").value }).then(function () {
+          $("manCode").value = ""; $("manNote").value = "";
+        });
+      };
+
+      function openCode(e) {
+        if (e) e.preventDefault();
+        if (!cur()) {
+          openDlg();
+          setTimeout(function () { $("ioMsg").textContent = "코드 이력을 쓰려면 프로젝트를 먼저 선택하거나 만들어 주세요."; }, 0);
+          return;
+        }
+        $("codeMsg").textContent = "";
+        $("diffSum").textContent = ""; lastOps = null; drawDiff();
+        renderCode().then(function () {
+          var d = $("codeDlg");
+          if (typeof d.showModal === "function") { if (!d.open) d.showModal(); } else d.setAttribute("open", "");
+        });
+      }
+      $("navCode").onclick = openCode;
+      $("codeBtn").onclick = openCode;
+      $("codeClose").onclick = function () { var d = $("codeDlg"); d.close ? d.close() : d.removeAttribute("open"); };
+
       // 대화 저장: 읽기 전용 구독 (채팅 송수신에는 관여하지 않음)
       function onActivity(a) {
         if (!db || !activeId || !a || a.type !== "message" || typeof a.text !== "string" || !a.text.trim()) return;
@@ -607,6 +939,7 @@
           role: isUser ? "user" : "agent", text: a.text, ts: ts, stage: stage
         }).then(function () {
           if (dlg.open) { refresh(); if (historyId === pid) showHistory(pid); }
+          if ($("codeDlg").open) renderCode();
         }).catch(function () {});
       }
       window.PanelLab = {
