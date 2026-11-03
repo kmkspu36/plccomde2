@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PanelLab | PLC Engineering AI</title>
+  <style>
+    :root {
+      --bg: #0c1424;
+      --rail: #0f1a2f;
+      --panel: #121c31;
+      --line: #24324f;
+      --text: #e6ecf7;
+      --muted: #93a1bd;
+      --blue: #3b82f6;
+      --blue-soft: #1b2d52;
+      --ok: #34d399;
+      --warn: #fbbf24;
+      --err: #f87171;
+      --radius: 10px;
+      --font: "Pretendard", "Malgun Gothic", "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif;
+      --mono: ui-monospace, "Cascadia Mono", "D2Coding", Consolas, monospace;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 15px;
+      line-height: 1.5;
+    }
+    .app {
+      display: grid;
+      grid-template-columns: 248px minmax(0, 1fr);
+      height: 100vh;
+      height: 100dvh;
+    }
+
+    /* 사이드바 */
+    .rail {
+      background: var(--rail);
+      border-right: 1px solid var(--line);
+      display: flex;
+      flex-direction: column;
+      padding: 20px 14px;
+      gap: 24px;
+    }
+    .brand { padding: 0 8px; }
+    .brand strong { display: block; font-size: 20px; letter-spacing: 0.01em; }
+    .brand span { color: var(--muted); font-size: 13px; }
+    .nav { display: flex; flex-direction: column; gap: 4px; }
+    .nav a {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 12px; border-radius: 8px;
+      color: var(--text); text-decoration: none; font-weight: 600;
+      background: var(--blue-soft);
+      box-shadow: inset 3px 0 0 var(--blue);
+    }
+    .nav svg { width: 18px; height: 18px; flex: none; stroke: var(--blue); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .rail-foot { margin-top: auto; padding: 12px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); }
+    .rail-foot p { margin: 0; color: var(--muted); font-size: 13px; }
+
+    /* 연결 상태 램프 */
+    .lamp { display: flex; align-items: center; gap: 10px; font-weight: 600; }
+    .lamp i {
+      width: 12px; height: 12px; border-radius: 50%; flex: none;
+      background: var(--warn); box-shadow: 0 0 0 3px rgba(251,191,36,.18);
+    }
+    body[data-conn="ok"] .lamp i { background: var(--ok); box-shadow: 0 0 0 3px rgba(52,211,153,.2); }
+    body[data-conn="error"] .lamp i { background: var(--err); box-shadow: 0 0 0 3px rgba(248,113,113,.2); }
+    body[data-conn="loading"] .lamp i { animation: pulse 1.4s ease-in-out infinite; }
+    @keyframes pulse { 50% { opacity: .35; } }
+
+    /* 본문 */
+    .main { display: flex; flex-direction: column; min-width: 0; padding: 20px 24px 24px; gap: 14px; min-height: 0; }
+    .head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .head h1 { margin: 0; font-size: 20px; }
+    .head p { margin: 2px 0 0; color: var(--muted); font-size: 13px; }
+    .head .lamp { padding: 6px 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--panel); font-size: 13px; white-space: nowrap; }
+
+    #status {
+      margin: 0; padding: 10px 14px; border-radius: var(--radius);
+      border: 1px solid var(--line); background: var(--panel); color: var(--muted);
+    }
+    #status[data-state="error"] { color: #ffd9d9; background: rgba(248,113,113,.12); border-color: var(--err); }
+    #status[hidden] { display: none; }
+
+    .chat {
+      flex: 1; min-height: 0;
+      border: 1px solid var(--line); border-radius: var(--radius);
+      background: var(--panel); overflow: hidden;
+    }
+    #webchat { height: 100%; }
+    #webchat .markdown pre {
+      background: #0a1120; border: 1px solid var(--line); border-radius: 8px;
+      padding: 12px 14px; overflow-x: auto; font-family: var(--mono); font-size: 13px; line-height: 1.6; color: #dbe7ff;
+    }
+    #webchat .markdown code { font-family: var(--mono); }
+
+    :focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+
+    /* 태블릿 */
+    @media (max-width: 1024px) {
+      .app { grid-template-columns: 76px minmax(0, 1fr); }
+      .brand span, .nav a b, .rail-foot p, .rail-foot .lamp span { display: none; }
+      .brand strong { font-size: 13px; text-align: center; }
+      .nav a { justify-content: center; padding: 12px 0; }
+      .rail-foot { padding: 12px 0; }
+      .rail-foot .lamp { justify-content: center; }
+    }
+    /* 모바일: 사이드바를 상단 바로 접기 */
+    @media (max-width: 640px) {
+      .app { grid-template-columns: 1fr; grid-template-rows: auto minmax(0, 1fr); }
+      .rail { flex-direction: row; align-items: center; padding: 10px 14px; border-right: 0; border-bottom: 1px solid var(--line); gap: 12px; }
+      .brand { padding: 0; }
+      .brand strong { font-size: 16px; text-align: left; }
+      .nav, .rail-foot { display: none; }
+      .main { padding: 12px; gap: 10px; }
+      .head p { display: none; }
+      .head h1 { font-size: 17px; }
+    }
+    @media (prefers-reduced-motion: reduce) { .lamp i { animation: none !important; } }
+  </style>
+</head>
+<body data-conn="loading">
+  <div class="app">
+    <aside class="rail">
+      <div class="brand">
+        <strong>PanelLab</strong>
+        <span>PLC Engineering AI</span>
+      </div>
+      <nav class="nav" aria-label="메뉴">
+        <a href="#" aria-current="page">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg>
+          <b>AI 엔지니어링 작업실</b>
+        </a>
+      </nav>
+      <div class="rail-foot">
+        <div class="lamp"><i></i><span class="lamp-text">연결 중</span></div>
+        <p>AGENT 01 · PLC 통합 운영</p>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="head">
+        <div>
+          <h1>AI 엔지니어링 작업실</h1>
+          <p>PLC 분석, 설계, 코드, 검증 작업을 AGENT 01에 요청하세요.</p>
+        </div>
+        <div class="lamp" aria-hidden="true"><i></i><span class="lamp-text">연결 중</span></div>
+      </header>
+
+      <p id="status" role="status" aria-live="polite">채팅에 연결하는 중입니다...</p>
+
+      <section class="chat" aria-label="AI 채팅">
+        <div id="webchat"></div>
+      </section>
+    </main>
+  </div>
+
+  <script src="https://cdn.botframework.com/botframework-webchat/4.18.0/webchat.js"></script>
+  <script>
+    const BROKER_URL = "https://dl-broker-juwon-4jt3z.azurewebsites.net/api/directlineToken";
+    const SEALED = "ZrF1e5yST8rzTiNaNxxLr363D8ApepIbzcXe7_nawgtuyUrImpWmCO-vQgOA9qaPYrR9fcKvr13q1XSPrS3DYrud4sh0wgJQ2IW_R5H3OSxf0F8DsuZG-8kiz2bgFgtgbgTA2lFhiFXTGMIE5NAEpmjbfrmcH8Bp2XgRoP85M8J3cQyRiVvHIgjqJltFkNlOskOecebrOkskPPIJn6nMf9nHoAyTooM6stZ2QHZKkWQyJHOO-ZTj8NL5fuWIvFhjXs0CIx8XrZDFPhrcsdnYzGIwUp0ZvkyTilDoD384cLkWmaSKUn4W_Cf_FybrM2CrR_SmFwjuHG3qc7gNhnkin4Z86bVZfdxB5qtuLPSAyan260u79TNZZ7g2gij24W8j5hvup8V-XL6PG-33--_nqxDtN1tac9MkqyT-Mcr2pjyp1YYJ_THI2t0kkWtLDLZnxvH5xwwpLL5vlurnB0fg21U9W4w7Zah291wwABU13pgQqaykNOp1JKuWz077qSssQDZwI8kILXLu3I9MbqDvujZTku3Sv6haRZ4TwsB7CX4BKP6JiLh4S0y_bcW0G33CB0HkIzzfIR0aapw7Dr2OyE2-oVSLZfLy3YxraiXFa8Ky-udsGD3JSN5XSrvqObrKU8Mlh4o0Z_q1HDZ9usg";
+    const status = document.getElementById("status");
+
+    // 디자인용: 연결 상태 램프 표시만 담당 (연결 로직과 무관)
+    function setConn(state, label) {
+      document.body.dataset.conn = state;
+      document.querySelectorAll(".lamp-text").forEach(function (el) { el.textContent = label; });
+    }
+
+    function showError(message) {
+      status.hidden = false;
+      status.dataset.state = "error";
+      status.textContent = message;
+      setConn("error", "연결 오류");
+    }
+
+    async function connect() {
+      if (!window.WebChat ||
+          typeof WebChat.createDirectLine !== "function" ||
+          typeof WebChat.renderWebChat !== "function") {
+        showError("채팅 구성 요소를 불러오지 못했습니다. 네트워크를 확인한 뒤 새로고침해 주세요.");
+        return;
+      }
+
+      let response;
+      try {
+        // Keep this a simple CORS request; the broker may not support preflight.
+        response = await fetch(BROKER_URL, {
+          method: "POST",
+          body: JSON.stringify({ sealed: SEALED })
+        });
+      } catch {
+        showError("서버에 연결하지 못했습니다. 네트워크와 배포 주소를 확인해 주세요.");
+        return;
+      }
+      if (!response.ok) {
+        showError("서버가 연결 요청을 처리하지 못했습니다 (HTTP " + response.status + ").");
+        return;
+      }
+
+      let data;
+      try {
+        data = await response.json();
+      } catch {
+        showError("서버 응답을 읽을 수 없습니다. 잠시 후 다시 시도해 주세요.");
+        return;
+      }
+      if (!data || typeof data.token !== "string" || !data.token.trim()) {
+        showError("서버에서 연결 토큰을 받지 못했습니다. 암호와 배포 주소를 확인해 주세요.");
+        return;
+      }
+
+      try {
+        const directLine = WebChat.createDirectLine({ token: data.token });
+        status.hidden = true;
+        setConn("ok", "연결됨");
+        directLine.postActivity({
+          type: "event", name: "startConversation", from: { id: "user" }
+        }).subscribe({
+          error: () => showError("첫 인사를 요청하지 못했습니다. 채팅창에 메시지를 입력해 주세요.")
+        });
+        WebChat.renderWebChat({
+          directLine,
+          locale: "ko-KR",
+          // 디자인 설정만 추가 (연결·토큰 로직은 변경 없음)
+          styleOptions: {
+            rootHeight: "100%",
+            primaryFont: "'Pretendard','Malgun Gothic','Apple SD Gothic Neo','Noto Sans KR',system-ui,sans-serif",
+            backgroundColor: "#121c31",
+            bubbleBackground: "#1b2740",
+            bubbleBorderColor: "#2a3a5c",
+            bubbleBorderRadius: 10,
+            bubbleTextColor: "#e6ecf7",
+            bubbleFromUserBackground: "#2563eb",
+            bubbleFromUserBorderColor: "#2563eb",
+            bubbleFromUserBorderRadius: 10,
+            bubbleFromUserTextColor: "#ffffff",
+            sendBoxBackground: "#0f1a2f",
+            sendBoxTextColor: "#e6ecf7",
+            sendBoxBorderTop: "1px solid #24324f",
+            sendBoxButtonColor: "#60a5fa",
+            sendBoxPlaceholderColor: "#93a1bd",
+            timestampColor: "#93a1bd",
+            suggestedActionBackground: "#1b2d52",
+            suggestedActionBorderColor: "#3b82f6",
+            suggestedActionTextColor: "#bcd3ff"
+          }
+        }, document.getElementById("webchat"));
+      } catch {
+        showError("채팅을 시작하지 못했습니다. 새로고침 후 다시 시도해 주세요.");
+      }
+    }
+
+    connect();
+  </script>
+</body>
+</html>
