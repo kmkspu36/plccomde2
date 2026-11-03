@@ -54,9 +54,9 @@
       display: flex; align-items: center; gap: 10px;
       padding: 10px 12px; border-radius: 8px;
       color: var(--text); text-decoration: none; font-weight: 600;
-      background: var(--blue-soft);
-      box-shadow: inset 3px 0 0 var(--blue);
     }
+    .nav a:hover { background: rgba(59,130,246,.1); }
+    .nav a[aria-current] { background: var(--blue-soft); box-shadow: inset 3px 0 0 var(--blue); }
     .nav svg { width: 18px; height: 18px; flex: none; stroke: var(--blue); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
     .rail-foot { margin-top: auto; padding: 12px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); }
     .rail-foot p { margin: 0; color: var(--muted); font-size: 13px; }
@@ -87,16 +87,92 @@
     #status[hidden] { display: none; }
 
     .chat {
-      flex: 1; min-height: 0;
+      flex: 1; min-height: 240px; position: relative;
       border: 1px solid var(--line); border-radius: var(--radius);
       background: var(--panel); overflow: hidden;
     }
-    #webchat { height: 100%; }
+    /* 높이를 확정값으로 채워야 WebChat 내부 스크롤이 작동하고 긴 답변이 잘리지 않는다 */
+    #webchat { position: absolute; inset: 0; width: 100%; min-width: 0; }
+    #webchat .webchat__bubble__content,
+    #webchat .markdown,
+    #webchat .markdown p,
+    #webchat .markdown li,
+    #webchat .markdown td { overflow-wrap: anywhere; word-break: break-word; }
+    #webchat .markdown pre { max-width: 100%; }
+    #webchat .markdown table { display: block; max-width: 100%; overflow-x: auto; }
     #webchat .markdown pre {
       background: #0a1120; border: 1px solid var(--line); border-radius: 8px;
       padding: 12px 14px; overflow-x: auto; font-family: var(--mono); font-size: 13px; line-height: 1.6; color: #dbe7ff;
     }
     #webchat .markdown code { font-family: var(--mono); }
+
+    /* 작업 진행 단계 */
+    .stagebar { display: flex; flex-direction: column; gap: 8px; }
+    .stages { list-style: none; margin: 0; padding: 0 0 2px; display: flex; gap: 6px; overflow-x: auto; }
+    .stages li { flex: 1 0 auto; }
+    .stage {
+      width: 100%; min-width: 118px; display: flex; flex-direction: column; align-items: flex-start; gap: 2px;
+      font: inherit; text-align: left; color: var(--text); background: var(--panel); cursor: pointer;
+      border: 1px solid var(--line); border-left: 4px solid var(--muted); border-radius: 8px; padding: 6px 10px;
+    }
+    .stage .nm { font-size: 13px; font-weight: 600; }
+    .stage .st { font-size: 12px; color: var(--muted); }
+    .stage[aria-pressed="true"] { outline: 2px solid var(--blue); }
+    .stage[data-s="진행 중"] { border-left-color: var(--blue); }
+    .stage[data-s="완료"] { border-left-color: var(--ok); }
+    .stage[data-s="오류 발생"] { border-left-color: var(--err); }
+    .stage[data-s="사용자 확인 필요"] { border-left-color: var(--warn); }
+    .stage-ctl { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .stage-ctl label { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); }
+    .stage-ctl select { font: inherit; color: var(--text); background: #0a1120; border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; }
+
+    /* 프로젝트 관리 */
+    .head { flex-wrap: wrap; }
+    .head-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .btn {
+      font: inherit; color: var(--text); background: var(--panel);
+      border: 1px solid var(--line); border-radius: 8px;
+      padding: 8px 14px; min-height: 40px; cursor: pointer;
+    }
+    .btn:hover { border-color: var(--blue); }
+    .btn.primary { background: var(--blue); border-color: var(--blue); color: #fff; font-weight: 600; }
+    .btn.danger { color: #ffb4b4; }
+    #projChip { max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .note { margin: 0; color: var(--muted); font-size: 13px; }
+    dialog {
+      background: var(--bg); color: var(--text); font-family: var(--font);
+      border: 1px solid var(--line); border-radius: 12px; padding: 0;
+      width: min(720px, calc(100vw - 24px)); max-height: calc(100vh - 24px); max-height: calc(100dvh - 24px);
+    }
+    dialog[open] { display: flex; flex-direction: column; }
+    dialog::backdrop { background: rgba(5,10,20,.7); }
+    .dlg-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid var(--line); }
+    .dlg-head h2 { margin: 0; font-size: 18px; }
+    .dlg-body { overflow: auto; padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+    .card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+    .card h3 { margin: 0; font-size: 15px; }
+    dialog label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--muted); }
+    dialog input, dialog select, dialog textarea {
+      font: inherit; color: var(--text); background: #0a1120;
+      border: 1px solid var(--line); border-radius: 8px; padding: 9px 10px; width: 100%;
+    }
+    dialog input:disabled { opacity: .7; }
+    .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .plist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+    .plist li { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; display: flex; flex-wrap: wrap; gap: 8px; justify-content: space-between; align-items: center; }
+    .plist li.on { border-color: var(--blue); background: var(--blue-soft); }
+    .pinfo { min-width: 0; flex: 1 1 220px; }
+    .pinfo b { display: block; overflow-wrap: anywhere; }
+    .pinfo span { color: var(--muted); font-size: 13px; }
+    .pact { display: flex; gap: 6px; flex-wrap: wrap; }
+    .pact .btn { padding: 6px 10px; min-height: 34px; font-size: 13px; }
+    .hist-list { display: flex; flex-direction: column; gap: 6px; max-height: 320px; overflow: auto; }
+    .msg { border-radius: 8px; padding: 8px 10px; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 14px; }
+    .msg.user { background: #1e3a8a; }
+    .msg.agent { background: #1b2740; }
+    .msg small { display: block; color: var(--muted); font-size: 12px; margin-bottom: 2px; }
+    @media (max-width: 640px) { .row2 { grid-template-columns: 1fr; } #projChip { max-width: 180px; } }
 
     :focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
 
@@ -135,6 +211,10 @@
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg>
           <b>AI 엔지니어링 작업실</b>
         </a>
+        <a href="#" id="navProjects">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+          <b>프로젝트 관리</b>
+        </a>
       </nav>
       <div class="rail-foot">
         <div class="lamp"><i></i><span class="lamp-text">연결 중</span></div>
@@ -148,8 +228,22 @@
           <h1>AI 엔지니어링 작업실</h1>
           <p>PLC 분석, 설계, 코드, 검증 작업을 AGENT 01에 요청하세요.</p>
         </div>
-        <div class="lamp" aria-hidden="true"><i></i><span class="lamp-text">연결 중</span></div>
+        <div class="head-actions">
+          <button type="button" class="btn" id="projChip">프로젝트 선택</button>
+          <div class="lamp" aria-hidden="true"><i></i><span class="lamp-text">연결 중</span></div>
+        </div>
       </header>
+
+      <p class="note" id="saveNote" hidden>프로젝트를 선택하거나 만들면 이 대화가 이 브라우저에 자동 저장됩니다.</p>
+
+      <section id="stageBar" class="stagebar" aria-label="작업 진행 상황" hidden>
+        <ol id="stageList" class="stages"></ol>
+        <div class="stage-ctl">
+          <span id="stageNow" class="note"></span>
+          <label>상태 <select id="stageStatus" aria-label="현재 단계 상태"></select></label>
+          <span class="note">완료는 결과를 직접 확인한 뒤 선택하세요. 에이전트 응답만으로 자동 완료되지 않습니다.</span>
+        </div>
+      </section>
 
       <p id="status" role="status" aria-live="polite">채팅에 연결하는 중입니다...</p>
 
@@ -158,6 +252,373 @@
       </section>
     </main>
   </div>
+
+  <dialog id="projDlg" aria-labelledby="projTitle">
+    <div class="dlg-head">
+      <h2 id="projTitle">프로젝트 관리</h2>
+      <button type="button" class="btn" id="dlgClose">닫기</button>
+    </div>
+    <div class="dlg-body">
+      <p class="note" id="dbWarn" hidden>이 브라우저에서는 저장소를 사용할 수 없어 프로젝트를 저장할 수 없습니다.</p>
+      <form id="projForm" class="card">
+        <h3 id="formTitle">새 프로젝트</h3>
+        <label>프로젝트 이름<input id="pName" maxlength="80" required></label>
+        <div class="row2">
+          <label>제조사<input value="Mitsubishi" disabled></label>
+          <label>프로그램<select id="pGx"><option>미정</option><option>GX Works2</option><option>GX Works3</option></select></label>
+        </div>
+        <label>CPU 모델<input id="pCpu" maxlength="60" placeholder="미정"></label>
+        <label>메모<textarea id="pMemo" rows="2" maxlength="500"></textarea></label>
+        <div class="actions">
+          <button class="btn primary" id="formSubmit">만들기</button>
+          <button type="button" class="btn" id="formCancel" hidden>수정 취소</button>
+        </div>
+      </form>
+      <section class="card">
+        <h3>내 프로젝트</h3>
+        <ul id="projList" class="plist"></ul>
+        <p class="note" id="emptyNote">아직 프로젝트가 없습니다. 위에서 새 프로젝트를 만들어 주세요.</p>
+        <div class="actions">
+          <button type="button" class="btn" id="expAll">전체 내보내기</button>
+          <button type="button" class="btn" id="impBtn">파일에서 불러오기</button>
+          <input type="file" id="impFile" accept="application/json,.json" hidden>
+        </div>
+        <p class="note">내보낸 JSON 파일로 백업하고 다른 기기로 옮길 수 있습니다. 브라우저 캐시나 사이트 데이터를 지우면 저장된 프로젝트도 사라집니다.</p>
+        <p class="note" id="ioMsg" role="status"></p>
+      </section>
+      <section class="card" id="histBox" hidden>
+        <h3 id="histTitle">저장된 대화</h3>
+        <p class="note">기록은 보기 전용입니다. AGENT 01의 이전 대화 상태를 복원하지는 않으며, 새 대화는 이 프로젝트에 이어서 저장됩니다.</p>
+        <div class="hist-list" id="histList"></div>
+      </section>
+    </div>
+  </dialog>
+
+  <script>
+    // 프로젝트 저장 모듈: 채팅 연결 코드와 분리되어 있으며, 응답을 읽어서 저장만 한다.
+    (function () {
+      "use strict";
+      var DB_NAME = "panellab", ACTIVE_KEY = "panellab.active";
+      var db = null, projects = [], activeId = null, editingId = null, historyId = null;
+      var GX = ["미정", "GX Works2", "GX Works3"];
+      var STAGES = [["analyze", "도면 분석"], ["draw", "PLC 작화"], ["code", "PLC 코드 생성"], ["check", "오류 검사"],
+                    ["fix", "오류 수정"], ["verify", "최종 검증"], ["report", "보고서 작성"]];
+      var STATUS = ["대기", "진행 중", "완료", "오류 발생", "사용자 확인 필요"];
+      function validStage(k) { return STAGES.some(function (s) { return s[0] === k; }); }
+      function norm(p) {
+        if (!p.stages || typeof p.stages !== "object") p.stages = {};
+        STAGES.forEach(function (s) { if (STATUS.indexOf(p.stages[s[0]]) < 0) p.stages[s[0]] = "대기"; });
+        if (!validStage(p.currentStage)) p.currentStage = null;
+        return p;
+      }
+      var $ = function (id) { return document.getElementById(id); };
+      var dlg = $("projDlg");
+
+      function req(r) {
+        return new Promise(function (res, rej) {
+          r.onsuccess = function () { res(r.result); };
+          r.onerror = function () { rej(r.error); };
+        });
+      }
+      function txDone(t) {
+        return new Promise(function (res, rej) {
+          t.oncomplete = function () { res(); };
+          t.onerror = function () { rej(t.error); };
+          t.onabort = function () { rej(t.error); };
+        });
+      }
+      function openDb() {
+        return new Promise(function (res, rej) {
+          if (!window.indexedDB) { rej(new Error("indexedDB 없음")); return; }
+          var r = indexedDB.open(DB_NAME, 1);
+          r.onupgradeneeded = function () {
+            var d = r.result;
+            d.createObjectStore("projects", { keyPath: "id" });
+            d.createObjectStore("messages", { keyPath: "key" }).createIndex("projectId", "projectId");
+          };
+          r.onsuccess = function () { res(r.result); };
+          r.onerror = function () { rej(r.error); };
+        });
+      }
+      function tx(stores, mode) { return db.transaction(stores, mode); }
+      function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+      function fmt(ts) {
+        try { return new Date(ts).toLocaleString("ko-KR", { dateStyle: "short", timeStyle: "short" }); }
+        catch (e) { return ""; }
+      }
+      function mk(tag, cls, text) {
+        var el = document.createElement(tag);
+        if (cls) el.className = cls;
+        if (text !== undefined) el.textContent = text;
+        return el;
+      }
+      function getActiveStored() { try { return localStorage.getItem(ACTIVE_KEY); } catch (e) { return null; } }
+      function setActiveStored() {
+        try { if (activeId) localStorage.setItem(ACTIVE_KEY, activeId); else localStorage.removeItem(ACTIVE_KEY); } catch (e) {}
+      }
+
+      function loadProjects() {
+        return req(tx("projects", "readonly").objectStore("projects").getAll()).then(function (list) {
+          projects = list.map(norm).sort(function (a, b) { return b.updatedAt - a.updatedAt; });
+        });
+      }
+      function countMsgs(id) { return req(tx("messages", "readonly").objectStore("messages").index("projectId").count(id)); }
+      function getMsgs(id) {
+        return req(tx("messages", "readonly").objectStore("messages").index("projectId").getAll(id)).then(function (l) {
+          return l.sort(function (a, b) { return a.ts - b.ts; });
+        });
+      }
+      function putProject(p) { var t = tx("projects", "readwrite"); t.objectStore("projects").put(p); return txDone(t); }
+      function delProject(id) {
+        var t = tx(["projects", "messages"], "readwrite");
+        t.objectStore("projects").delete(id);
+        var c = t.objectStore("messages").index("projectId").openCursor(IDBKeyRange.only(id));
+        c.onsuccess = function () { var cur = c.result; if (cur) { cur.delete(); cur.continue(); } };
+        return txDone(t);
+      }
+      function addMsg(m) {
+        var t = tx(["messages", "projects"], "readwrite");
+        t.objectStore("messages").put(m);
+        var ps = t.objectStore("projects"), g = ps.get(m.projectId);
+        g.onsuccess = function () { if (g.result) { g.result.updatedAt = Date.now(); ps.put(g.result); } };
+        return txDone(t);
+      }
+
+      function updateChip() {
+        var p = projects.filter(function (x) { return x.id === activeId; })[0];
+        if (!p) activeId = null;
+        $("projChip").textContent = p ? "프로젝트: " + p.name : "프로젝트 선택";
+        $("saveNote").hidden = !!p || !db;
+        renderStages();
+      }
+
+      function renderList(counts) {
+        var ul = $("projList");
+        ul.textContent = "";
+        $("emptyNote").hidden = projects.length > 0;
+        projects.forEach(function (p, i) {
+          var li = mk("li", p.id === activeId ? "on" : "");
+          var info = mk("div", "pinfo");
+          info.appendChild(mk("b", "", p.name + (p.id === activeId ? " (사용 중)" : "")));
+          info.appendChild(mk("span", "", p.vendor + " · " + p.gx + " · CPU " + p.cpu + " · 완료 " + doneCount(p) + "/" + STAGES.length + " · 대화 " + counts[i] + "개 · 수정 " + fmt(p.updatedAt)));
+          if (p.memo) info.appendChild(mk("span", "", "메모: " + p.memo));
+          var act = mk("div", "pact");
+          function btn(label, cls, fn) { var b = mk("button", "btn " + cls, label); b.type = "button"; b.onclick = fn; act.appendChild(b); }
+          if (p.id !== activeId) btn("선택", "primary", function () { setActive(p.id); });
+          btn("대화 보기", "", function () { showHistory(p.id); });
+          btn("정보 수정", "", function () { startEdit(p); });
+          btn("내보내기", "", function () { exportProjects([p.id]); });
+          btn("삭제", "danger", function () {
+            if (!confirm("'" + p.name + "' 프로젝트와 저장된 대화를 삭제할까요? 되돌릴 수 없습니다.")) return;
+            delProject(p.id).then(function () {
+              if (activeId === p.id) { activeId = null; setActiveStored(); }
+              if (historyId === p.id) { historyId = null; $("histBox").hidden = true; }
+              return refresh();
+            }).catch(function () { $("ioMsg").textContent = "삭제하지 못했습니다."; });
+          });
+          li.appendChild(info); li.appendChild(act); ul.appendChild(li);
+        });
+      }
+
+      function refresh() {
+        if (!db) return Promise.resolve();
+        return loadProjects().then(function () {
+          return Promise.all(projects.map(function (p) { return countMsgs(p.id); }));
+        }).then(function (counts) { updateChip(); renderList(counts); });
+      }
+
+      function setActive(id) { activeId = id; setActiveStored(); refresh(); }
+
+      function showHistory(id) {
+        historyId = id;
+        var p = projects.filter(function (x) { return x.id === id; })[0];
+        getMsgs(id).then(function (list) {
+          var box = $("histList");
+          box.textContent = "";
+          $("histTitle").textContent = "저장된 대화: " + (p ? p.name : "");
+          if (!list.length) box.appendChild(mk("p", "note", "저장된 대화가 없습니다."));
+          list.forEach(function (m) {
+            var d = mk("div", "msg " + m.role);
+            d.appendChild(mk("small", "", (m.role === "user" ? "사용자" : "AGENT 01") + (m.stage ? " · " + stageName(m.stage) : "") + " · " + fmt(m.ts)));
+            d.appendChild(document.createTextNode(m.text));
+            box.appendChild(d);
+          });
+          $("histBox").hidden = false;
+        });
+      }
+
+      function resetForm() {
+        editingId = null;
+        $("projForm").reset();
+        $("formTitle").textContent = "새 프로젝트";
+        $("formSubmit").textContent = "만들기";
+        $("formCancel").hidden = true;
+      }
+      function startEdit(p) {
+        editingId = p.id;
+        $("pName").value = p.name; $("pGx").value = p.gx; $("pCpu").value = p.cpu === "미정" ? "" : p.cpu; $("pMemo").value = p.memo || "";
+        $("formTitle").textContent = "프로젝트 정보 수정";
+        $("formSubmit").textContent = "저장";
+        $("formCancel").hidden = false;
+        $("pName").focus();
+      }
+
+      $("projForm").addEventListener("submit", function (e) {
+        e.preventDefault();
+        if (!db) return;
+        var name = $("pName").value.trim();
+        if (!name) return;
+        var now = Date.now(), existing = projects.filter(function (x) { return x.id === editingId; })[0];
+        var p = existing || { id: uid(), vendor: "Mitsubishi", createdAt: now };
+        p.name = name; p.gx = $("pGx").value; p.cpu = $("pCpu").value.trim() || "미정";
+        p.memo = $("pMemo").value.trim(); p.updatedAt = now; norm(p);
+        var isNew = !existing;
+        putProject(p).then(function () {
+          resetForm();
+          if (isNew) { activeId = p.id; setActiveStored(); }
+          return refresh();
+        }).catch(function () { $("ioMsg").textContent = "저장하지 못했습니다."; });
+      });
+      $("formCancel").onclick = resetForm;
+
+      function exportProjects(ids) {
+        var list = projects.filter(function (p) { return !ids || ids.indexOf(p.id) >= 0; });
+        Promise.all(list.map(function (p) { return getMsgs(p.id); })).then(function (all) {
+          var data = {
+            app: "PanelLab", version: 1, exportedAt: new Date().toISOString(),
+            projects: list.map(function (p, i) {
+              return {
+                name: p.name, vendor: p.vendor, gx: p.gx, cpu: p.cpu, memo: p.memo || "",
+                stages: p.stages, currentStage: p.currentStage,
+                createdAt: p.createdAt, updatedAt: p.updatedAt,
+                messages: all[i].map(function (m) { return { role: m.role, text: m.text, ts: m.ts, stage: m.stage || null }; })
+              };
+            })
+          };
+          var url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }));
+          var a = document.createElement("a");
+          a.href = url; a.download = "panellab-projects-" + new Date().toISOString().slice(0, 10) + ".json";
+          document.body.appendChild(a); a.click(); a.remove();
+          setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+          $("ioMsg").textContent = list.length + "개 프로젝트를 내보냈습니다.";
+        }).catch(function () { $("ioMsg").textContent = "내보내지 못했습니다."; });
+      }
+      $("expAll").onclick = function () { exportProjects(null); };
+
+      function str(v, max, fallback) { return typeof v === "string" && v.trim() ? v.trim().slice(0, max) : fallback; }
+      function num(v) { return typeof v === "number" && isFinite(v) ? v : Date.now(); }
+      $("impBtn").onclick = function () { $("impFile").click(); };
+      $("impFile").onchange = function () {
+        var f = this.files && this.files[0];
+        this.value = "";
+        if (!f || !db) return;
+        f.text().then(function (text) {
+          var d = JSON.parse(text);
+          if (!d || d.app !== "PanelLab" || !Array.isArray(d.projects)) throw new Error("형식");
+          var t = tx(["projects", "messages"], "readwrite");
+          d.projects.forEach(function (src) {
+            var id = uid();
+            var ns = norm({ stages: (src.stages && typeof src.stages === "object") ? src.stages : {}, currentStage: src.currentStage });
+            t.objectStore("projects").put({
+              id: id, vendor: "Mitsubishi", name: str(src.name, 80, "가져온 프로젝트"),
+              gx: GX.indexOf(src.gx) >= 0 ? src.gx : "미정", cpu: str(src.cpu, 60, "미정"),
+              memo: str(src.memo, 500, ""), createdAt: num(src.createdAt), updatedAt: num(src.updatedAt),
+              stages: ns.stages, currentStage: ns.currentStage
+            });
+            (Array.isArray(src.messages) ? src.messages : []).forEach(function (m, i) {
+              if (!m || (m.role !== "user" && m.role !== "agent") || typeof m.text !== "string") return;
+              t.objectStore("messages").put({ key: id + ":" + i, projectId: id, role: m.role, text: m.text, ts: num(m.ts), stage: validStage(m.stage) ? m.stage : null });
+            });
+          });
+          return txDone(t).then(function () { $("ioMsg").textContent = d.projects.length + "개 프로젝트를 불러왔습니다."; return refresh(); });
+        }).catch(function () { $("ioMsg").textContent = "불러오지 못했습니다. PanelLab에서 내보낸 JSON 파일인지 확인해 주세요."; });
+      };
+
+      function cur() { return projects.filter(function (x) { return x.id === activeId; })[0]; }
+      function stageName(k) { var s = STAGES.filter(function (x) { return x[0] === k; })[0]; return s ? s[1] : ""; }
+      function doneCount(p) { return STAGES.filter(function (s) { return p.stages[s[0]] === "완료"; }).length; }
+      function updateProject(id, fn) {
+        var t = tx("projects", "readwrite"), ps = t.objectStore("projects"), g = ps.get(id);
+        g.onsuccess = function () {
+          if (g.result) { var q = norm(g.result); fn(q); q.updatedAt = Date.now(); ps.put(q); }
+        };
+        return txDone(t);
+      }
+      function renderStages() {
+        var p = cur(), bar = $("stageBar");
+        bar.hidden = !p;
+        if (!p) return;
+        var ul = $("stageList");
+        ul.textContent = "";
+        STAGES.forEach(function (s, i) {
+          var li = document.createElement("li"), b = mk("button", "stage");
+          b.type = "button";
+          b.setAttribute("data-k", s[0]);
+          b.setAttribute("data-s", p.stages[s[0]]);
+          b.setAttribute("aria-pressed", p.currentStage === s[0] ? "true" : "false");
+          b.appendChild(mk("span", "nm", (i + 1) + ". " + s[1]));
+          b.appendChild(mk("span", "st", p.stages[s[0]]));
+          b.onclick = function () {
+            var next = p.currentStage === s[0] ? null : s[0];
+            updateProject(p.id, function (q) { q.currentStage = next; }).then(refresh).then(function () {
+              var n = ul.querySelector('[data-k="' + s[0] + '"]');
+              if (n) n.focus();
+            });
+          };
+          li.appendChild(b);
+          ul.appendChild(li);
+        });
+        var sel = $("stageStatus");
+        if (!sel.options.length) STATUS.forEach(function (v) { var o = document.createElement("option"); o.value = v; o.textContent = v; sel.appendChild(o); });
+        sel.disabled = !p.currentStage;
+        if (p.currentStage) { sel.value = p.stages[p.currentStage]; $("stageNow").textContent = "현재 단계: " + stageName(p.currentStage); }
+        else $("stageNow").textContent = "단계를 선택하면 이후 대화가 그 단계로 기록됩니다.";
+      }
+      $("stageStatus").onchange = function () {
+        var p = cur();
+        if (!p || !p.currentStage) return;
+        var st = this.value, k = p.currentStage;
+        updateProject(p.id, function (q) { q.stages[k] = st; }).then(refresh);
+      };
+
+      function openDlg(e) {
+        if (e) e.preventDefault();
+        $("ioMsg").textContent = "";
+        refresh().then(function () {
+          if (typeof dlg.showModal === "function") { if (!dlg.open) dlg.showModal(); } else dlg.setAttribute("open", "");
+        });
+      }
+      $("projChip").onclick = openDlg;
+      $("navProjects").onclick = openDlg;
+      $("dlgClose").onclick = function () { dlg.close ? dlg.close() : dlg.removeAttribute("open"); };
+
+      // 대화 저장: 읽기 전용 구독 (채팅 송수신에는 관여하지 않음)
+      function onActivity(a) {
+        if (!db || !activeId || !a || a.type !== "message" || typeof a.text !== "string" || !a.text.trim()) return;
+        var isUser = a.from && (a.from.role === "user" || a.from.id === "user");
+        var ts = a.timestamp ? (Date.parse(a.timestamp) || Date.now()) : Date.now();
+        var pid = activeId, ap = cur(), stage = ap ? ap.currentStage : null;
+        if (isUser && stage && ap.stages[stage] === "대기") {
+          updateProject(pid, function (q) { if (q.stages[stage] === "대기") q.stages[stage] = "진행 중"; })
+            .then(refresh).catch(function () {});
+        }
+        addMsg({
+          key: pid + ":" + (a.id || (ts + ":" + a.text.length)), projectId: pid,
+          role: isUser ? "user" : "agent", text: a.text, ts: ts, stage: stage
+        }).then(function () {
+          if (dlg.open) { refresh(); if (historyId === pid) showHistory(pid); }
+        }).catch(function () {});
+      }
+      window.PanelLab = {
+        attach: function (directLine) {
+          try { directLine.activity$.subscribe(function (a) { try { onActivity(a); } catch (e) {} }); } catch (e) {}
+        }
+      };
+
+      openDb().then(function (d) { db = d; activeId = getActiveStored(); return refresh(); })
+        .catch(function () { $("dbWarn").hidden = false; $("projForm").querySelectorAll("input,select,textarea,button").forEach(function (el) { el.disabled = true; }); });
+    })();
+  </script>
 
   <script src="https://cdn.botframework.com/botframework-webchat/4.18.0/webchat.js"></script>
   <script>
@@ -232,6 +693,7 @@
             primaryFont: "'Pretendard','Malgun Gothic','Apple SD Gothic Neo','Noto Sans KR',system-ui,sans-serif",
             backgroundColor: "#121c31",
             bubbleBackground: "#1b2740",
+            bubbleMaxWidth: 860,
             bubbleBorderColor: "#2a3a5c",
             bubbleBorderRadius: 10,
             bubbleTextColor: "#e6ecf7",
@@ -250,6 +712,8 @@
             suggestedActionTextColor: "#bcd3ff"
           }
         }, document.getElementById("webchat"));
+        // 프로젝트 저장용 읽기 전용 구독 (WebChat 렌더링 이후에 연결, 실패해도 채팅에 영향 없음)
+        setTimeout(function () { try { window.PanelLab && window.PanelLab.attach(directLine); } catch (e) {} }, 0);
       } catch {
         showError("채팅을 시작하지 못했습니다. 새로고침 후 다시 시도해 주세요.");
       }
